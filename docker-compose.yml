@@ -1,0 +1,13 @@
+name: "example"
+
+services:
+  one:
+    image: nginxdemos/hello:0.4
+
+  two:
+    image: nginxdemos/hello:0.4
+
+networks:
+  example-network:
+    name: example-network
+    driver: bridge
