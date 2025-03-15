@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdmain"
 
@@ -8,6 +9,11 @@ import (
 )
 
 func main() {
+	err := env.Bind()
+	if err != nil {
+		panic(err)
+	}
+
 	l, err := log.NewLogger()
 	if err != nil {
 		panic(err)
