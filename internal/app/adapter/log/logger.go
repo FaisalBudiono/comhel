@@ -3,6 +3,7 @@ package log
 import (
 	"log/slog"
 	"os"
+	"strings"
 )
 
 var logger *slog.Logger
@@ -22,8 +23,17 @@ func NewLogger() (*slog.Logger, error) {
 	}
 
 	slogHandler := slog.NewJSONHandler(f, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: logLevel(),
 	})
 
 	return slog.New(slogHandler), nil
+}
+
+func logLevel() slog.Leveler {
+	env := strings.ToLower(os.Getenv("APP_ENV"))
+	if env == "debug" {
+		return slog.LevelDebug
+	}
+
+	return slog.LevelWarn
 }
