@@ -6,6 +6,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 )
 
+var indexStateAll = -1
+
 type model struct {
 	ctx context.Context
 
@@ -16,7 +18,7 @@ type model struct {
 	cursor       int
 	activeStates map[int]bool
 
-	keyQueues   []string
+	keyQueues        []string
 	cancelQueueReset context.CancelFunc
 
 	reloadBroadcast  chan struct{}
@@ -31,10 +33,11 @@ func New() model {
 		ctx:     context.Background(),
 		spinner: spn,
 
+		cursor:       indexStateAll,
 		states:       make(map[string]renderableService),
 		activeStates: make(map[int]bool),
 
-		keyQueues:   make([]string, 0),
+		keyQueues:        make([]string, 0),
 		cancelQueueReset: func() {},
 
 		reloadBroadcast:  make(chan struct{}),

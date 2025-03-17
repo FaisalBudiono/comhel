@@ -37,7 +37,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Logger().Debug("update: g", slog.String("key", msg.String()))
 
 			if keys == "gg" {
-				m.cursor = 0
+				m.cursor = indexStateAll
 				m.keyQueues = []string{}
 
 				return m, nil
@@ -50,7 +50,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, resetKeyQueues(ctx)
 		case "home":
-			m.cursor = 0
+			m.cursor = indexStateAll
 
 			return m, nil
 		case "end", "G":
@@ -58,7 +58,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, nil
 		case "k", "up":
-			if m.cursor > 0 {
+			if m.cursor > indexStateAll {
 				m.cursor--
 			}
 
@@ -71,8 +71,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, nil
 		case " ":
-			activeState := m.activeStates[m.cursor]
-			m.activeStates[m.cursor] = !activeState
+			m := m.toggleMark()
 
 			log.Logger().Debug(
 				"update: change active state",
@@ -216,10 +215,16 @@ func (m model) renderTable() string {
 		rows[i] = []string{m.renderCursor(i), no, name, m.renderStatus(name)}
 	}
 
+	headerMark := "[ ]"
+	if m.allMark() {
+		headerMark = "[x]"
+	}
+
 	t := table.New().
 		StyleFunc(m.tableStyling).
 		Border(lipgloss.NormalBorder()).
-		Headers("", "No", "Service", "Status").
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
+		Headers(headerMark, "NO", "SERVICE", "STATUS").
 		Rows(rows...)
 
 	s += t.Render()
@@ -232,6 +237,18 @@ func (m model) tableStyling(row, col int) lipgloss.Style {
 
 	switch row {
 	case table.HeaderRow:
+		if m.cursor == table.HeaderRow {
+			if col == 0 {
+				return activeHeaderMarkerStyle()
+			}
+
+			return activeHeaderStyle()
+		}
+
+		if col == 0 {
+			return cellStyle()
+		}
+
 		return headerStyle()
 	case m.cursor:
 		if isNumberCol {
@@ -262,6 +279,47 @@ func (m model) renderCursor(i int) string {
 	}
 
 	return "[ ]"
+}
+
+func (m model) toggleMark() model {
+	isTriggeredAll := m.cursor == indexStateAll
+	if !isTriggeredAll {
+		activeState := m.activeStates[m.cursor]
+		m.activeStates[m.cursor] = !activeState
+
+		log.Logger().Debug(
+			"toggleMark: triggered one by one",
+			slog.String("activeStates", fmt.Sprintf("%#v", m.activeStates)),
+		)
+
+		return m
+	}
+
+	firstMarkState := m.activeStates[0]
+
+	for i := range m.services {
+		m.activeStates[i] = !firstMarkState
+	}
+
+	log.Logger().Debug(
+		"toggleMark: trigger all",
+		slog.Bool("firstMark", firstMarkState),
+		slog.String("services", fmt.Sprintf("%#v", m.services)),
+		slog.String("activeStates", fmt.Sprintf("%#v", m.activeStates)),
+	)
+
+	return m
+}
+
+func (m model) allMark() bool {
+	for i := range m.services {
+		mark := m.activeStates[i]
+		if !mark {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (m model) markedServices() []string {
