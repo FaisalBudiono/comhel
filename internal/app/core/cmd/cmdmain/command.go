@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
-	"github.com/FaisalBudiono/comhel/internal/app/core/compose"
+	"github.com/FaisalBudiono/comhel/internal/app/port/portout"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -16,7 +16,7 @@ type fetchedListNames []string
 
 func fetchList(ctx context.Context) tea.Cmd {
 	return func() tea.Msg {
-		names, err := compose.List(ctx)
+		names, err := composeRepo.List(ctx)
 		if err != nil {
 			panic(err)
 		}
@@ -30,7 +30,7 @@ type composeAllSent bool
 func composeDown(ctx context.Context, b chan<- struct{}) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
-			err := compose.Down(ctx)
+			err := composeRepo.Down(ctx)
 			if err != nil {
 				log.Logger().Error("failed compose down", slog.String("err", fmt.Sprintf("%#v", err)))
 				panic(err)
@@ -46,7 +46,7 @@ func composeDown(ctx context.Context, b chan<- struct{}) tea.Cmd {
 func composeUp(ctx context.Context, b chan<- struct{}) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
-			err := compose.Up(ctx)
+			err := composeRepo.Up(ctx)
 			if err != nil {
 				log.Logger().Error("failed compose up", slog.String("err", fmt.Sprintf("%#v", err)))
 				panic(err)
@@ -66,9 +66,9 @@ func composeUpMarked(
 ) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
-			err := compose.UpByService(ctx, services...)
+			err := composeRepo.UpByService(ctx, services...)
 			if err != nil {
-				if !errors.Is(err, compose.ErrNoService) {
+				if !errors.Is(err, portout.ErrNoService) {
 					log.Logger().Error("failed compose up manually", slog.String("err", fmt.Sprintf("%#v", err)))
 					panic(err)
 				}
@@ -86,9 +86,9 @@ func composeDownMarked(
 ) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
-			err := compose.DownByService(ctx, services...)
+			err := composeRepo.DownByService(ctx, services...)
 			if err != nil {
-				if !errors.Is(err, compose.ErrNoService) {
+				if !errors.Is(err, portout.ErrNoService) {
 					log.Logger().Error("failed compose down manually", slog.String("err", fmt.Sprintf("%#v", err)))
 					panic(err)
 				}
@@ -133,9 +133,9 @@ type (
 
 func fetchService(ctx context.Context, serviceName string) tea.Cmd {
 	return func() tea.Msg {
-		s, err := compose.Service(ctx, serviceName)
+		s, err := composeRepo.Service(ctx, serviceName)
 		if err != nil {
-			if errors.Is(err, compose.ErrNotFound) {
+			if errors.Is(err, portout.ErrNotFound) {
 				return fetchedServiceNotFound(serviceName)
 			}
 

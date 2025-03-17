@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/FaisalBudiono/comhel/internal/app/adapter/doccom"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdmain"
@@ -19,6 +20,8 @@ func main() {
 		panic(err)
 	}
 	log.SetDefault(l)
+
+	cmdmain.BindDeps(doccom.New())
 
 	p := tea.NewProgram(cmdmain.New())
 

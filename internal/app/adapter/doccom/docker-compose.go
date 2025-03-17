@@ -1,17 +1,24 @@
-package compose
+package doccom
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"os/exec"
 	"slices"
 	"strings"
 
 	"github.com/FaisalBudiono/comhel/internal/app/domain"
+	"github.com/FaisalBudiono/comhel/internal/app/port/portout"
 )
 
-func List(ctx context.Context) ([]string, error) {
+type service struct {
+	Name  string `json:"Service"`
+	State string `json:"State"`
+}
+
+type dockerCompose struct{}
+
+func (repo *dockerCompose) List(ctx context.Context) ([]string, error) {
 	cmd := exec.CommandContext(
 		ctx,
 		"docker", "compose", "config", "--services",
@@ -35,14 +42,7 @@ func List(ctx context.Context) ([]string, error) {
 	return uniqueServices, nil
 }
 
-var ErrNotFound = errors.New("service not found")
-
-type service struct {
-	Name  string `json:"Service"`
-	State string `json:"State"`
-}
-
-func Service(ctx context.Context, serviceName string) (domain.Service, error) {
+func (repo *dockerCompose) Service(ctx context.Context, serviceName string) (domain.Service, error) {
 	cmd := exec.CommandContext(
 		ctx,
 		"docker", "compose", "ps", "-a", "--format", "json", serviceName,
@@ -55,12 +55,12 @@ func Service(ctx context.Context, serviceName string) (domain.Service, error) {
 
 	stringOutput := strings.Trim(string(o), " ")
 	if stringOutput == "" {
-		return domain.Service{}, ErrNotFound
+		return domain.Service{}, portout.ErrNotFound
 	}
 
 	splitOutputs := strings.Split(string(o), "\n")
 	if len(splitOutputs) == 0 {
-		return domain.Service{}, ErrNotFound
+		return domain.Service{}, portout.ErrNotFound
 	}
 
 	output := splitOutputs[0]
@@ -74,7 +74,7 @@ func Service(ctx context.Context, serviceName string) (domain.Service, error) {
 	return domain.NewService(s.Name, domain.StatusFrom(s.State)), nil
 }
 
-func Up(ctx context.Context) error {
+func (repo *dockerCompose) Up(ctx context.Context) error {
 	cmd := exec.CommandContext(
 		ctx,
 		"docker", "compose", "up", "-d",
@@ -88,11 +88,9 @@ func Up(ctx context.Context) error {
 	return nil
 }
 
-var ErrNoService = errors.New("no service provided")
-
-func UpByService(ctx context.Context, services ...string) error {
+func (repo *dockerCompose) UpByService(ctx context.Context, services ...string) error {
 	if len(services) == 0 {
-		return ErrNoService
+		return portout.ErrNoService
 	}
 
 	args := []string{"compose", "up", "-d"}
@@ -110,7 +108,7 @@ func UpByService(ctx context.Context, services ...string) error {
 	return nil
 }
 
-func Down(ctx context.Context) error {
+func (repo *dockerCompose) Down(ctx context.Context) error {
 	cmd := exec.CommandContext(
 		ctx,
 		"docker", "compose", "down", "--remove-orphans",
@@ -124,9 +122,9 @@ func Down(ctx context.Context) error {
 	return nil
 }
 
-func DownByService(ctx context.Context, services ...string) error {
+func (repo *dockerCompose) DownByService(ctx context.Context, services ...string) error {
 	if len(services) == 0 {
-		return ErrNoService
+		return portout.ErrNoService
 	}
 
 	args := []string{"compose", "down", "--remove-orphans"}
@@ -142,4 +140,8 @@ func DownByService(ctx context.Context, services ...string) error {
 	}
 
 	return nil
+}
+
+func New() *dockerCompose {
+	return &dockerCompose{}
 }
