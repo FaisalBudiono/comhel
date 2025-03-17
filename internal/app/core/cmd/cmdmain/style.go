@@ -12,13 +12,13 @@ func activeStyle() lipgloss.Style {
 		Foreground(lipgloss.Color("#ca07ce"))
 }
 
-func noCellStyle() lipgloss.Style {
+func numberCellStyle() lipgloss.Style {
 	return cellStyle().
 		Align(lipgloss.Center)
 }
 
-func noActiveStyle() lipgloss.Style {
-	return noCellStyle().
+func numberActiveStyle() lipgloss.Style {
+	return numberCellStyle().
 		Foreground(lipgloss.Color("#ca07ce"))
 }
 

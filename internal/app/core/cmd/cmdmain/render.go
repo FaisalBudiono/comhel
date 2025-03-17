@@ -228,25 +228,22 @@ func (m model) renderTable() string {
 }
 
 func (m model) tableStyling(row, col int) lipgloss.Style {
-	if row == table.HeaderRow {
-		return headerStyle()
-	}
-
 	isNumberCol := col == 1
-	isActiveRow := row == m.cursor
-	if isActiveRow {
+
+	switch row {
+	case table.HeaderRow:
+		return headerStyle()
+	case m.cursor:
 		if isNumberCol {
-			return noActiveStyle()
+			return numberActiveStyle()
 		}
-
 		return activeStyle()
+	default:
+		if isNumberCol {
+			return numberCellStyle()
+		}
+		return cellStyle()
 	}
-
-	if isNumberCol {
-		return noCellStyle()
-	}
-
-	return cellStyle()
 }
 
 func (m model) renderStatus(serviceName string) string {
