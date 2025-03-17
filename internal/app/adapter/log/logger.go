@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/rtp"
 )
 
@@ -35,7 +36,7 @@ func NewLogger() (*slog.Logger, error) {
 var logFilename = "logs.log"
 
 func logPath() string {
-	if rtp.DevMode() {
+	if env.Get().DevMode {
 		return filepath.Join("./logs", logFilename)
 	}
 
