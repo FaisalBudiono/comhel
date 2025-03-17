@@ -28,13 +28,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "k":
+		case "k", "up":
 			if m.cursor > 0 {
 				m.cursor--
 			}
 
 			return m, nil
-		case "j":
+		case "j", "down":
 			maxServiceCursor := len(m.services) - 1
 			if m.cursor < maxServiceCursor {
 				m.cursor++
@@ -112,7 +112,14 @@ func (m model) View() string {
 }
 
 func (m model) helperText() string {
-	return helperStyle().Render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
+	var s string
+	render := helperStyle().Render
+
+	s += render("k/↑: cursor up | j/↓: cursor down")
+	s += "\n"
+	s += render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
+
+	return s
 }
 
 func (m model) renderTable() string {
