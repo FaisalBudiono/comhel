@@ -7,6 +7,12 @@ services:
   two:
     image: nginxdemos/hello:0.4
 
+  tri:
+    image: nginxdemos/hello:0.4
+
+  for:
+    image: nginxdemos/hello:0.4
+
 networks:
   example-network:
     name: example-network
