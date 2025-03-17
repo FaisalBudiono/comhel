@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"strings"
+
+	"github.com/charmbracelet/lipgloss/table"
 
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m model) Init() tea.Cmd {
@@ -26,6 +28,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+
+			return m, nil
+		case "j":
+			maxServiceCursor := len(m.services) - 1
+			if m.cursor < maxServiceCursor {
+				m.cursor++
+			}
+
+			return m, nil
 		case "U":
 			return m, tea.Batch(
 				composeUp(m.ctx, m.reloadBroadcast),
@@ -91,13 +106,13 @@ func (m model) View() string {
 
 	s += "\n\n"
 
-	s += m.actionCommandText()
+	s += m.helperText()
 
 	return s
 }
 
-func (m model) actionCommandText() string {
-	return "q: quit | R: refresh"
+func (m model) helperText() string {
+	return helperStyle().Render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
 }
 
 func (m model) renderTable() string {
@@ -106,22 +121,42 @@ func (m model) renderTable() string {
 		return fmt.Sprintf("%s Loading", m.spinner.View())
 	}
 
-	serviceFmt := fmt.Sprintf("| %%%ds | %%%ds | %%%ds |\n",
-		m.clNo,
-		m.clService,
-		m.clStatus,
-	)
+	log.Logger().Debug("render: table", slog.Int("cursor", m.cursor))
 
-	s += m.dash()
-	s += fmt.Sprintf(serviceFmt, "No", "Service", "Status")
-	s += m.dash()
-
+	rows := make([][]string, len(m.services))
 	for i, name := range m.services {
 		no := strconv.FormatInt(int64(i+1), 10)
-		s += fmt.Sprintf(serviceFmt, no, name, m.renderStatus(name))
+
+		rows[i] = []string{no, name, m.renderStatus(name)}
 	}
 
-	s += m.dash()
+	t := table.New().
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == table.HeaderRow {
+				return headerStyle()
+			}
+
+			isNumberCol := col == 0
+			isActiveRow := row == m.cursor
+			if isActiveRow {
+				if isNumberCol {
+					return noActiveStyle()
+				}
+
+				return activeStyle()
+			}
+
+			if isNumberCol {
+				return noCellStyle()
+			}
+
+			return cellStyle()
+		}).
+		Border(lipgloss.NormalBorder()).
+		Headers("No", "Service", "Status").
+		Rows(rows...)
+
+	s += t.Render()
 
 	return s
 }
@@ -133,10 +168,4 @@ func (m model) renderStatus(serviceName string) string {
 	}
 
 	return s.status
-}
-
-func (m model) dash() string {
-	total := m.clNo + m.clService + m.clStatus + 10
-
-	return strings.Repeat("-", total) + "\n"
 }

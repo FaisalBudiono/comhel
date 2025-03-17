@@ -11,12 +11,9 @@ type model struct {
 
 	spinner spinner.Model
 
-	clNo      int
-	clService int
-	clStatus  int
-
 	services []string
 	states   map[string]renderableService
+	cursor   int
 
 	reloadBroadcast chan struct{}
 }
@@ -28,10 +25,6 @@ func New() model {
 	return model{
 		ctx:     context.Background(),
 		spinner: spn,
-
-		clNo:      5,
-		clService: 8,
-		clStatus:  14,
 
 		states: make(map[string]renderableService),
 
