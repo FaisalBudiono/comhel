@@ -30,7 +30,7 @@ func List(ctx context.Context) ([]string, error) {
 			uniqueServices = append(uniqueServices, s)
 		}
 	}
-    slices.Sort(uniqueServices)
+	slices.Sort(uniqueServices)
 
 	return uniqueServices, nil
 }
@@ -88,11 +88,53 @@ func Up(ctx context.Context) error {
 	return nil
 }
 
+var ErrNoService = errors.New("no service provided")
+
+func UpByService(ctx context.Context, services ...string) error {
+	if len(services) == 0 {
+		return ErrNoService
+	}
+
+	args := []string{"compose", "up", "-d"}
+	for _, s := range services {
+		args = append(args, s)
+	}
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
+
+	_, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Down(ctx context.Context) error {
 	cmd := exec.CommandContext(
 		ctx,
 		"docker", "compose", "down", "--remove-orphans",
 	)
+
+	_, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DownByService(ctx context.Context, services ...string) error {
+	if len(services) == 0 {
+		return ErrNoService
+	}
+
+	args := []string{"compose", "down", "--remove-orphans"}
+	for _, s := range services {
+		args = append(args, s)
+	}
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
 
 	_, err := cmd.Output()
 	if err != nil {

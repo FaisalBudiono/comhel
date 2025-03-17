@@ -16,7 +16,8 @@ type model struct {
 	cursor       int
 	activeStates map[int]bool
 
-	reloadBroadcast chan struct{}
+	reloadBroadcast  chan struct{}
+	serviceBroadcast chan []string
 }
 
 func New() model {
@@ -30,6 +31,7 @@ func New() model {
 		states:       make(map[string]renderableService),
 		activeStates: make(map[int]bool),
 
-		reloadBroadcast: make(chan struct{}),
+		reloadBroadcast:  make(chan struct{}),
+		serviceBroadcast: make(chan []string),
 	}
 }

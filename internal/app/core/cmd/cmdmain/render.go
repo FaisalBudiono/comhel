@@ -51,15 +51,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 
 			return m, nil
+		case "u":
+			markedServices := m.markedServices()
+
+			log.Logger().Debug(
+				"update: up marked services",
+				slog.String("services", fmt.Sprintf("%#v", markedServices)),
+			)
+
+			return m, tea.Batch(
+				composeUpMarked(m.ctx, markedServices, m.serviceBroadcast),
+				refetchMarked(m.serviceBroadcast),
+			)
+		case "d":
+			markedServices := m.markedServices()
+
+			log.Logger().Debug(
+				"update: up marked services",
+				slog.String("services", fmt.Sprintf("%#v", markedServices)),
+			)
+
+			return m, tea.Batch(
+				composeDownMarked(m.ctx, markedServices, m.serviceBroadcast),
+				refetchMarked(m.serviceBroadcast),
+			)
 		case "U":
 			return m, tea.Batch(
 				composeUp(m.ctx, m.reloadBroadcast),
-				refetchListener(m.reloadBroadcast),
+				refetchAll(m.reloadBroadcast),
 			)
 		case "D":
 			return m, tea.Batch(
 				composeDown(m.ctx, m.reloadBroadcast),
-				refetchListener(m.reloadBroadcast),
+				refetchAll(m.reloadBroadcast),
 			)
 		case "R":
 			return m, fetchList(m.ctx)
@@ -69,16 +93,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner, cmd = m.spinner.Update(msg)
 
 		return m, cmd
-	case composeFinished:
+	case composeAllSent:
 		log.Logger().Debug("update: compose finish")
 
 		m.states = make(map[string]renderableService)
 
 		return m, nil
-	case refetchedCalled:
+
+	case composeMarkedSent:
+		for _, name := range msg {
+			delete(m.states, name)
+		}
+
+		return m, nil
+	case refetchedAllCalled:
 		log.Logger().Debug("update: refetched called")
 
 		return m, fetchList(m.ctx)
+	case refetchedMarkedCalled:
+		log.Logger().Debug("update: refetched marked only")
+
+		cmds := make([]tea.Cmd, len(msg))
+		for i, sn := range msg {
+			cmds[i] = fetchService(m.ctx, sn)
+		}
+
+		return m, tea.Batch(cmds...)
 	case fetchedListNames:
 		log.Logger().Debug("update: fetchlist name", slog.String("list", fmt.Sprintf("%#v", msg)))
 
@@ -124,6 +164,8 @@ func (m model) helperText() string {
 	render := helperStyle().Render
 
 	s += render("k/↑: cursor up | j/↓: cursor down | space: mark")
+	s += "\n"
+	s += render("u: Up marked | d: Down marked")
 	s += "\n"
 	s += render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
 
@@ -194,4 +236,23 @@ func (m model) renderCursor(i int) string {
 	}
 
 	return "[ ]"
+}
+
+func (m model) markedServices() []string {
+	maxIndex := len(m.services) - 1
+	markedServices := make([]string, 0)
+
+	for i, isMarked := range m.activeStates {
+		if isMarked && i <= maxIndex {
+			markedServices = append(markedServices, m.services[i])
+		}
+	}
+
+	log.Logger().Debug("fetching markedServices",
+		slog.Int("maxIndex", maxIndex),
+		slog.String("activeStates", fmt.Sprintf("%#v", m.activeStates)),
+		slog.String("markedServices", fmt.Sprintf("%#v", markedServices)),
+	)
+
+	return markedServices
 }

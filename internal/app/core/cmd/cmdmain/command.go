@@ -25,7 +25,7 @@ func fetchList(ctx context.Context) tea.Cmd {
 	}
 }
 
-type composeFinished bool
+type composeAllSent bool
 
 func composeDown(ctx context.Context, b chan<- struct{}) tea.Cmd {
 	return func() tea.Msg {
@@ -39,7 +39,7 @@ func composeDown(ctx context.Context, b chan<- struct{}) tea.Cmd {
 			b <- struct{}{}
 		}()
 
-		return composeFinished(false)
+		return composeAllSent(false)
 	}
 }
 
@@ -55,19 +55,74 @@ func composeUp(ctx context.Context, b chan<- struct{}) tea.Cmd {
 			b <- struct{}{}
 		}()
 
-		return composeFinished(false)
+		return composeAllSent(false)
 	}
 }
 
-type refetchedCalled bool
+type composeMarkedSent []string
 
-func refetchListener(b <-chan struct{}) tea.Cmd {
+func composeUpMarked(
+	ctx context.Context, services []string, b chan<- []string,
+) tea.Cmd {
 	return func() tea.Msg {
-		log.Logger().Debug("cmd: START refetch listener")
+		go func() {
+			err := compose.UpByService(ctx, services...)
+			if err != nil {
+				if !errors.Is(err, compose.ErrNoService) {
+					log.Logger().Error("failed compose up manually", slog.String("err", fmt.Sprintf("%#v", err)))
+					panic(err)
+				}
+			}
+
+			b <- services
+		}()
+
+		return composeMarkedSent(services)
+	}
+}
+
+func composeDownMarked(
+	ctx context.Context, services []string, b chan<- []string,
+) tea.Cmd {
+	return func() tea.Msg {
+		go func() {
+			err := compose.DownByService(ctx, services...)
+			if err != nil {
+				if !errors.Is(err, compose.ErrNoService) {
+					log.Logger().Error("failed compose down manually", slog.String("err", fmt.Sprintf("%#v", err)))
+					panic(err)
+				}
+			}
+
+			b <- services
+		}()
+
+		return composeMarkedSent(services)
+	}
+}
+
+type refetchedAllCalled bool
+
+func refetchAll(b <-chan struct{}) tea.Cmd {
+	return func() tea.Msg {
+		log.Logger().Debug("cmd: START refetch all")
 		<-b
 
-		log.Logger().Debug("cmd: END refetch listener")
-		return refetchedCalled(false)
+		log.Logger().Debug("cmd: END refetch all")
+		return refetchedAllCalled(false)
+	}
+}
+
+type refetchedMarkedCalled []string
+
+func refetchMarked(b <-chan []string) tea.Cmd {
+	return func() tea.Msg {
+		log.Logger().Debug("cmd: START refetch marked")
+		res := <-b
+
+		log.Logger().Debug("cmd: END refetch marked")
+
+		return refetchedMarkedCalled(res)
 	}
 }
 
