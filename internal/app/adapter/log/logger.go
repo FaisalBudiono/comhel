@@ -19,7 +19,7 @@ func SetDefault(l *slog.Logger) {
 	logger = l
 }
 
-func NewLogger() (*slog.Logger, error) {
+func New() (*slog.Logger, error) {
 	f, err := os.OpenFile(logPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err

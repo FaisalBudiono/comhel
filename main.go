@@ -15,7 +15,7 @@ func main() {
 		panic(err)
 	}
 
-	l, err := log.NewLogger()
+	l, err := log.New()
 	if err != nil {
 		panic(err)
 	}
