@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/rtp"
@@ -48,7 +47,7 @@ func prodLogPath() string {
 }
 
 func logLevel() slog.Leveler {
-	level := strings.ToLower(os.Getenv("LOG_LEVEL"))
+	level := env.Get().LogLevel
 
 	switch level {
 	case "debug":
