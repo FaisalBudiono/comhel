@@ -45,7 +45,7 @@ type service struct {
 func Service(ctx context.Context, serviceName string) (domain.Service, error) {
 	cmd := exec.CommandContext(
 		ctx,
-		"docker", "compose", "ps", "--format", "json", serviceName,
+		"docker", "compose", "ps", "-a", "--format", "json", serviceName,
 	)
 
 	o, err := cmd.Output()
