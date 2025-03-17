@@ -16,6 +16,9 @@ type model struct {
 	cursor       int
 	activeStates map[int]bool
 
+	keyQueues   []string
+	cancelQueueReset context.CancelFunc
+
 	reloadBroadcast  chan struct{}
 	serviceBroadcast chan []string
 }
@@ -30,6 +33,9 @@ func New() model {
 
 		states:       make(map[string]renderableService),
 		activeStates: make(map[int]bool),
+
+		keyQueues:   make([]string, 0),
+		cancelQueueReset: func() {},
 
 		reloadBroadcast:  make(chan struct{}),
 		serviceBroadcast: make(chan []string),

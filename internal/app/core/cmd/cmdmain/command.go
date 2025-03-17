@@ -153,3 +153,20 @@ func fetchService(ctx context.Context, serviceName string) tea.Cmd {
 		return fetchedService(fromDomain(s))
 	}
 }
+
+type queueReset struct{}
+
+func resetKeyQueues(ctx context.Context) tea.Cmd {
+	log.Logger().Debug("resetKeyQueue: called")
+
+	return func() tea.Msg {
+		select {
+		case <-time.After(time.Second):
+			log.Logger().Debug("resetKeyQueue: finish")
+			return queueReset(struct{}{})
+		case <-ctx.Done():
+			log.Logger().Debug("resetKeyQueue: canceled")
+			return nil
+		}
+	}
+}

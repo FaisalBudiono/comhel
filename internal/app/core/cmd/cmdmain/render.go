@@ -1,9 +1,11 @@
 package cmdmain
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss/table"
 
@@ -28,6 +30,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "g":
+			m.keyQueues = append(m.keyQueues, "g")
+			keys := strings.Join(m.keyQueues, "")
+
+			log.Logger().Debug("update: g", slog.String("key", msg.String()))
+
+			if keys == "gg" {
+				m.cursor = 0
+				m.keyQueues = []string{}
+
+				return m, nil
+			}
+
+			m.cancelQueueReset()
+
+			ctx, cancel := context.WithCancel(m.ctx)
+			m.cancelQueueReset = cancel
+
+			return m, resetKeyQueues(ctx)
+		case "home":
+			m.cursor = 0
+
+			return m, nil
+		case "end", "G":
+			m.cursor = len(m.services) - 1
+
+			return m, nil
 		case "k", "up":
 			if m.cursor > 0 {
 				m.cursor--
@@ -163,9 +192,9 @@ func (m model) helperText() string {
 	var s string
 	render := helperStyle().Render
 
-	s += render("k/↑: cursor up | j/↓: cursor down | space: mark")
+	s += render("k/↑: cursor up | j/↓: cursor down | home/gg: Go top | end/G: Go bottom")
 	s += "\n"
-	s += render("u: Up marked | d: Down marked")
+	s += render("u: Up marked | d: Down marked | space: mark")
 	s += "\n"
 	s += render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
 
