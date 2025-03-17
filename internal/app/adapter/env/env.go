@@ -36,8 +36,8 @@ func Bind() error {
 
 func setENV() {
 	s = spec{
-		DevMode:  strings.ToLower(os.Getenv("DEV_MODE")) == "true",
-		LogLevel: strings.ToLower(os.Getenv("LOG_LEVEL")),
+		DevMode:  strings.ToLower(os.Getenv("COMHEL_DEV_MODE")) == "true",
+		LogLevel: strings.ToLower(os.Getenv("COMHEL_LOG_LEVEL")),
 	}
 }
 
