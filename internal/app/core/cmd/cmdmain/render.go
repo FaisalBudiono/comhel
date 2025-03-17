@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdsaver"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,11 +25,35 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg.(type) {
+	case subModelQuitConfirmed:
+		log.Logger().Debug("update: sub model quit confirm")
+		m.subModel = nil
+
+		return m, nil
+	}
+
+	if m.subModel != nil {
+		log.Logger().Debug("update: enter sub model update")
+
+		var cmd tea.Cmd
+		m.subModel, cmd = m.subModel.Update(msg)
+
+		var spinnerCMD tea.Cmd
+		m.spinner, spinnerCMD = m.spinner.Update(msg)
+
+		return m, tea.Batch(cmd, spinnerCMD)
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		log.Logger().Debug("update: keypress", slog.String("key", msg.String()))
 
 		switch msg.String() {
+		case "@":
+			m.subModel = cmdsaver.New(m.subModelQuitBroadcast)
+
+			return m, waitSubModelQuit(m.subModelQuitBroadcast)
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "g":
@@ -179,6 +204,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if m.subModel != nil {
+		log.Logger().Debug("view: enter sub model view")
+
+		return m.subModel.View()
+	}
+
 	var s string
 
 	s += m.renderTable()

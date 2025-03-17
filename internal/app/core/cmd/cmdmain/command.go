@@ -163,3 +163,15 @@ func resetKeyQueues(ctx context.Context) tea.Cmd {
 		}
 	}
 }
+
+type subModelQuitConfirmed struct{}
+
+func waitSubModelQuit(b <-chan struct{}) tea.Cmd {
+	return func() tea.Msg {
+		log.Logger().Debug("waitSubModelQuit: START")
+		<-b
+		log.Logger().Debug("waitSubModelQuit: END")
+
+		return subModelQuitConfirmed(struct{}{})
+	}
+}

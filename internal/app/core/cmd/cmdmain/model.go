@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var indexStateAll = -1
@@ -11,7 +12,8 @@ var indexStateAll = -1
 type model struct {
 	ctx context.Context
 
-	spinner spinner.Model
+	spinner  spinner.Model
+	subModel tea.Model
 
 	services     []string
 	states       map[string]renderableService
@@ -21,8 +23,9 @@ type model struct {
 	keyQueues        []string
 	cancelQueueReset context.CancelFunc
 
-	reloadBroadcast  chan struct{}
-	serviceBroadcast chan []string
+	reloadBroadcast       chan struct{}
+	serviceBroadcast      chan []string
+	subModelQuitBroadcast chan struct{}
 }
 
 func New() model {
@@ -40,7 +43,8 @@ func New() model {
 		keyQueues:        make([]string, 0),
 		cancelQueueReset: func() {},
 
-		reloadBroadcast:  make(chan struct{}),
-		serviceBroadcast: make(chan []string),
+		reloadBroadcast:       make(chan struct{}),
+		serviceBroadcast:      make(chan []string),
+		subModelQuitBroadcast: make(chan struct{}),
 	}
 }
