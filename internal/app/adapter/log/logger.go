@@ -5,19 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/rtp"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/env"
 )
-
-var logger *slog.Logger
-
-func Logger() *slog.Logger {
-	return logger
-}
-
-func SetDefault(l *slog.Logger) {
-	logger = l
-}
 
 func New() (*slog.Logger, error) {
 	f, err := os.OpenFile(logPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

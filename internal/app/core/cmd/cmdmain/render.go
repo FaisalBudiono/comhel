@@ -9,8 +9,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss/table"
 
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdsaver"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"

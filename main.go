@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/doccom"
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/env"
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
+	logadapter "github.com/FaisalBudiono/comhel/internal/app/adapter/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdmain"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/env"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,7 +16,7 @@ func main() {
 		panic(err)
 	}
 
-	l, err := log.New()
+	l, err := logadapter.New()
 	if err != nil {
 		panic(err)
 	}

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 	"github.com/FaisalBudiono/comhel/internal/app/port/portout"
 	tea "github.com/charmbracelet/bubbletea"
 )

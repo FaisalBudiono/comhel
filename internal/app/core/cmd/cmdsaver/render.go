@@ -3,7 +3,7 @@ package cmdsaver
 import (
 	"log/slog"
 
-	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
