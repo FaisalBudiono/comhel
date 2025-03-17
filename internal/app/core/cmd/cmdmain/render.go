@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 
 	"github.com/FaisalBudiono/comhel/internal/app/adapter/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -189,7 +190,7 @@ func (m model) View() string {
 
 func (m model) helperText() string {
 	var s string
-	render := helperStyle().Render
+	render := styleutil.Helper().Render
 
 	s += render("k/↑: cursor up | j/↓: cursor down | home/gg: Go top | end/G: Go bottom")
 	s += "\n"
@@ -215,21 +216,23 @@ func (m model) renderTable() string {
 		rows[i] = []string{m.renderCursor(i), no, name, m.renderStatus(name)}
 	}
 
-	headerMark := "[ ]"
-	if m.allMark() {
-		headerMark = "[x]"
-	}
-
 	t := table.New().
 		StyleFunc(m.tableStyling).
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
-		Headers(headerMark, "NO", "SERVICE", "STATUS").
+		BorderStyle(lipgloss.NewStyle().Foreground(styleutil.ColorDarkPurple)).
+		Headers(m.headerMark(), "NO", "SERVICE", "STATUS").
 		Rows(rows...)
 
 	s += t.Render()
 
 	return s
+}
+
+func (m model) headerMark() string {
+	if m.allMark() {
+		return "[x]"
+	}
+	return "[ ]"
 }
 
 func (m model) tableStyling(row, col int) lipgloss.Style {
@@ -239,27 +242,27 @@ func (m model) tableStyling(row, col int) lipgloss.Style {
 	case table.HeaderRow:
 		if m.cursor == table.HeaderRow {
 			if col == 0 {
-				return activeHeaderMarkerStyle()
+				return styleutil.ActiveHeaderMarker()
 			}
 
-			return activeHeaderStyle()
+			return styleutil.ActiveHeader()
 		}
 
 		if col == 0 {
-			return cellStyle()
+			return styleutil.Cell()
 		}
 
-		return headerStyle()
+		return styleutil.Header()
 	case m.cursor:
 		if isNumberCol {
-			return numberActiveStyle()
+			return styleutil.NumberActive()
 		}
-		return activeStyle()
+		return styleutil.Active()
 	default:
 		if isNumberCol {
-			return numberCellStyle()
+			return styleutil.NumberCell()
 		}
-		return cellStyle()
+		return styleutil.Cell()
 	}
 }
 

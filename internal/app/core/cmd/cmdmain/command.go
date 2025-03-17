@@ -126,13 +126,6 @@ func refetchMarked(b <-chan []string) tea.Cmd {
 	}
 }
 
-func waitThen(d time.Duration, cmd tea.Cmd) tea.Cmd {
-	t := time.After(d)
-	<-t
-
-	return cmd
-}
-
 type (
 	fetchedService         renderableService
 	fetchedServiceNotFound string
