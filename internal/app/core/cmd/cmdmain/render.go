@@ -41,6 +41,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			return m, nil
+		case " ":
+			activeState := m.activeStates[m.cursor]
+			m.activeStates[m.cursor] = !activeState
+
+			log.Logger().Debug(
+				"update: change active state",
+				slog.String("active-states", fmt.Sprintf("%#v", m.activeStates)),
+			)
+
+			return m, nil
 		case "U":
 			return m, tea.Batch(
 				composeUp(m.ctx, m.reloadBroadcast),
@@ -103,9 +113,7 @@ func (m model) View() string {
 	var s string
 
 	s += m.renderTable()
-
 	s += "\n\n"
-
 	s += m.helperText()
 
 	return s
@@ -115,7 +123,7 @@ func (m model) helperText() string {
 	var s string
 	render := helperStyle().Render
 
-	s += render("k/↑: cursor up | j/↓: cursor down")
+	s += render("k/↑: cursor up | j/↓: cursor down | space: mark")
 	s += "\n"
 	s += render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
 
@@ -134,38 +142,40 @@ func (m model) renderTable() string {
 	for i, name := range m.services {
 		no := strconv.FormatInt(int64(i+1), 10)
 
-		rows[i] = []string{no, name, m.renderStatus(name)}
+		rows[i] = []string{m.renderCursor(i), no, name, m.renderStatus(name)}
 	}
 
 	t := table.New().
-		StyleFunc(func(row, col int) lipgloss.Style {
-			if row == table.HeaderRow {
-				return headerStyle()
-			}
-
-			isNumberCol := col == 0
-			isActiveRow := row == m.cursor
-			if isActiveRow {
-				if isNumberCol {
-					return noActiveStyle()
-				}
-
-				return activeStyle()
-			}
-
-			if isNumberCol {
-				return noCellStyle()
-			}
-
-			return cellStyle()
-		}).
+		StyleFunc(m.tableStyling).
 		Border(lipgloss.NormalBorder()).
-		Headers("No", "Service", "Status").
+		Headers("", "No", "Service", "Status").
 		Rows(rows...)
 
 	s += t.Render()
 
 	return s
+}
+
+func (m model) tableStyling(row, col int) lipgloss.Style {
+	if row == table.HeaderRow {
+		return headerStyle()
+	}
+
+	isNumberCol := col == 1
+	isActiveRow := row == m.cursor
+	if isActiveRow {
+		if isNumberCol {
+			return noActiveStyle()
+		}
+
+		return activeStyle()
+	}
+
+	if isNumberCol {
+		return noCellStyle()
+	}
+
+	return cellStyle()
 }
 
 func (m model) renderStatus(serviceName string) string {
@@ -175,4 +185,13 @@ func (m model) renderStatus(serviceName string) string {
 	}
 
 	return s.status
+}
+
+func (m model) renderCursor(i int) string {
+	isActive := m.activeStates[i]
+	if isActive {
+		return "[x]"
+	}
+
+	return "[ ]"
 }

@@ -11,9 +11,10 @@ type model struct {
 
 	spinner spinner.Model
 
-	services []string
-	states   map[string]renderableService
-	cursor   int
+	services     []string
+	states       map[string]renderableService
+	cursor       int
+	activeStates map[int]bool
 
 	reloadBroadcast chan struct{}
 }
@@ -26,7 +27,8 @@ func New() model {
 		ctx:     context.Background(),
 		spinner: spn,
 
-		states: make(map[string]renderableService),
+		states:       make(map[string]renderableService),
+		activeStates: make(map[int]bool),
 
 		reloadBroadcast: make(chan struct{}),
 	}
