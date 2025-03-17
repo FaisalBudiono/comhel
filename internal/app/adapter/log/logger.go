@@ -3,9 +3,10 @@ package log
 import (
 	"log/slog"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
+
+	"github.com/FaisalBudiono/comhel/internal/app/adapter/rtp"
 )
 
 var logger *slog.Logger
@@ -31,35 +32,27 @@ func NewLogger() (*slog.Logger, error) {
 	return slog.New(slogHandler), nil
 }
 
+var logFilename = "logs.log"
+
 func logPath() string {
-	devMode := strings.ToLower(os.Getenv("DEV_MODE")) == "true"
-	if devMode {
-		return "./logs/logs.log"
+	if rtp.DevMode() {
+		return filepath.Join("./logs", logFilename)
 	}
 
 	return prodLogPath()
 }
 
 func prodLogPath() string {
-	u, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-
-	dir := filepath.Join(u.HomeDir, ".comhel")
-	err = os.MkdirAll(dir, 0700)
-	if err != nil {
-		panic(err)
-	}
-
-	return filepath.Join(dir, "logs.log")
+	return filepath.Join(rtp.OwnDir(), logFilename)
 }
 
 func logLevel() slog.Leveler {
-	env := strings.ToLower(os.Getenv("APP_ENV"))
-	if env == "debug" {
-		return slog.LevelDebug
-	}
+	level := strings.ToLower(os.Getenv("LOG_LEVEL"))
 
-	return slog.LevelWarn
+	switch level {
+	case "debug":
+		return slog.LevelDebug
+	default:
+		return slog.LevelWarn
+	}
 }
