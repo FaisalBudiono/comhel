@@ -18,6 +18,14 @@ func quit(b chan<- struct{}) tea.Cmd {
 	}
 }
 
+func quitAndLoad(b chan<- []string, loadServices []string) tea.Cmd {
+	return func() tea.Msg {
+		b <- loadServices
+
+		return nil
+	}
+}
+
 type fetchConfigSent struct{}
 
 func fetchConfigs(
@@ -88,7 +96,7 @@ func saveConfig(ctx context.Context, key string, services []string) tea.Cmd {
 		)
 		_, err := configRepo.Save(ctx, cp)
 		if err != nil {
-			panic(err)
+			return errorReceived(err)
 		}
 
 		return configSaved(struct{}{})

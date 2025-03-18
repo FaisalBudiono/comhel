@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -29,9 +30,16 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	l := log.Logger().With(logattr.Caller("cmdmain: update"))
 
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case subModelQuitConfirmed:
 		l.Debug("update: sub model quit confirm")
+		m.subModel = nil
+
+		return m, m.spinner.Tick
+	case loadedServiceQuitConfirmed:
+		l.Debug("update: sub model loader quit")
+
+		m = m.toActiveStates(msg)
 		m.subModel = nil
 
 		return m, m.spinner.Tick
@@ -62,6 +70,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(
 				m.subModel.Init(),
 				waitSubModelQuit(m.subModelQuitBroadcast),
+			)
+		case "L":
+			m.subModel = cmdconfig.NewLoader(
+				m.ctx,
+				m.serviceBroadcast,
+				m.markedServices(),
+				m.services,
+			)
+
+			return m, tea.Batch(
+				m.subModel.Init(),
+				waitModelLoaderQuit(m.serviceBroadcast),
 			)
 		case "q", "ctrl+c":
 			return m, tea.Quit
@@ -336,6 +356,23 @@ func (m model) renderCursor(i int) string {
 	}
 
 	return "[ ]"
+}
+
+func (m model) toActiveStates(loadedService []string) model {
+	l := log.Logger().With(logattr.Caller("cmdmain: map loaded services"))
+
+	for i, name := range m.services {
+		l.Debug(fmt.Sprintf("marking %s", name))
+
+		var isMarked bool
+		if slices.Contains(loadedService, name) {
+			isMarked = true
+		}
+
+		m.activeStates[i] = isMarked
+	}
+
+	return m
 }
 
 func (m model) toggleMark() model {

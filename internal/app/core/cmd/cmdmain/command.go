@@ -175,3 +175,13 @@ func waitSubModelQuit(b <-chan struct{}) tea.Cmd {
 		return subModelQuitConfirmed(struct{}{})
 	}
 }
+
+type loadedServiceQuitConfirmed []string
+
+func waitModelLoaderQuit(b <-chan []string) tea.Cmd {
+	return func() tea.Msg {
+		res := <-b
+
+		return loadedServiceQuitConfirmed(res)
+	}
+}
