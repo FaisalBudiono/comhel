@@ -22,19 +22,6 @@ type filePreset struct {
 	Presets []configPreset `json:"presets"`
 }
 
-func (fp filePreset) replace(p configPreset) {
-	idx := slices.IndexFunc(fp.Presets, func(item configPreset) bool {
-		return item.Key == p.Key
-	})
-
-	if idx == -1 {
-		fp.Presets = append(fp.Presets, p)
-		return
-	}
-
-	fp.Presets[idx] = p
-}
-
 type jsonconfig struct {
 	m sync.Mutex
 }
@@ -70,10 +57,8 @@ func (repo *jsonconfig) Save(ctx context.Context, p domain.ConfigPreset) (domain
 		return domain.ConfigPreset{}, err
 	}
 
-	fp.replace(configPreset{
-		Key:      p.Key,
-		Services: p.Services,
-	})
+	fp.Presets = replacePreset(fp, configPreset{Key: p.Key, Services: p.Services})
+	l.Debug("modify preset", logattr.Any("presets", fp.Presets))
 
 	buf, err = json.MarshalIndent(fp, "", "  ")
 	if err != nil {
@@ -97,6 +82,25 @@ func (repo *jsonconfig) Save(ctx context.Context, p domain.ConfigPreset) (domain
 	}
 
 	return p, nil
+}
+
+func replacePreset(fp filePreset, p configPreset) []configPreset {
+	presets := make([]configPreset, len(fp.Presets))
+	copy(presets, fp.Presets)
+
+	idx := slices.IndexFunc(presets, func(item configPreset) bool {
+		return item.Key == p.Key
+	})
+
+	if idx != -1 {
+		presets[idx] = p
+
+		return presets
+	}
+
+	presets = append(presets, p)
+
+	return presets
 }
 
 func (repo *jsonconfig) Fetch(ctx context.Context) ([]domain.ConfigPreset, error) {
