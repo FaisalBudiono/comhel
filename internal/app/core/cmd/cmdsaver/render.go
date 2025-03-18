@@ -28,12 +28,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		l.Debug("saver update: keypress", slog.String("key", msg.String()))
 
 		switch msg.String() {
+		case key1, key2, key3, key4, key5, key6, key7, key8:
+			l.Debug("key press to save", slog.String("key", msg.String()))
+
+			return m, saveConfig(m.ctx, msg.String(), m.markedServices)
 		case "esc":
 			l.Debug("saver update: escaped")
 			return m, quit(m.quitBroadcast)
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		}
+	case configSaved:
+		l.Debug("config saved received")
+
+		return m, fetchConfigs(m.ctx, m.configFetcherBroadcast)
 	case fetchConfigSent:
 		l.Debug("fetch config sent")
 
@@ -50,6 +58,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var s string
+
+	s += styleutil.Title().Render("Preset Saver")
+	s += "\n\n"
+
 	s += m.renderTable()
 	s += "\n\n"
 	s += m.helperText()
@@ -125,11 +137,26 @@ func (m model) formatServices(services []string) string {
 }
 
 func (m model) helperText() string {
+	mapKey := func(keys []string) []domain.Keymap {
+		if len(keys) == 0 {
+			return nil
+		}
+
+		res := make([]domain.Keymap, len(keys))
+		for i, key := range keys {
+			res[i] = domain.NewKeymap([]string{key}, fmt.Sprintf("Save to %s", key))
+		}
+
+		return res
+	}
+
 	helpGroups := [][]domain.Keymap{
 		{
 			{Keys: []string{"q", "ctrl+c"}, Description: "quit"},
 			{Keys: []string{"<esc>"}, Description: "go back"},
 		},
+		mapKey([]string{key1, key2, key3, key4}),
+		mapKey([]string{key5, key6, key7, key8}),
 	}
 
 	return styleutil.RenderHelper(helpGroups)

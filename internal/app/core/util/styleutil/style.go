@@ -2,6 +2,15 @@ package styleutil
 
 import "github.com/charmbracelet/lipgloss"
 
+func Title() lipgloss.Style {
+	return lipgloss.NewStyle().
+        Background(ColorDarkPurple).
+		Border(lipgloss.DoubleBorder()).
+		Width(50).Height(3).
+		Align(lipgloss.Center).AlignVertical(lipgloss.Center).
+        Bold(true).Italic(true)
+}
+
 func Cell() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Padding(0, 1)

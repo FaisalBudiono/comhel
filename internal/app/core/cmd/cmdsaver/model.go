@@ -27,8 +27,9 @@ var validKeys = []string{key1, key2, key3, key4, key5, key6, key7, key8}
 type model struct {
 	ctx context.Context
 
-	validServices []string
-	configs       []configPreset
+	markedServices []string
+	validServices  []string
+	configs        []configPreset
 
 	quitBroadcast          chan<- struct{}
 	configFetcherBroadcast chan []domain.ConfigPreset
@@ -37,12 +38,14 @@ type model struct {
 func New(
 	ctx context.Context,
 	quitBroadcast chan<- struct{},
+	markedServices []string,
 	validServices []string,
 ) model {
 	return model{
 		ctx: ctx,
 
-		validServices: validServices,
+		markedServices: markedServices,
+		validServices:  validServices,
 
 		quitBroadcast:          quitBroadcast,
 		configFetcherBroadcast: make(chan []domain.ConfigPreset),

@@ -48,8 +48,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		log.Logger().Debug("update: keypress", slog.String("key", msg.String()))
 
 		switch msg.String() {
-		case "@":
-			m.subModel = cmdsaver.New(m.ctx, m.subModelQuitBroadcast, m.services)
+		case "S":
+			m.subModel = cmdsaver.New(
+				m.ctx,
+				m.subModelQuitBroadcast,
+				m.markedServices(),
+				m.services,
+			)
 
 			return m, tea.Batch(
 				m.subModel.Init(),
@@ -239,6 +244,9 @@ func (m model) helperText() string {
 			{Keys: []string{"<space>"}, Description: "mark service"},
 			{Keys: []string{"u"}, Description: "compose up marked"},
 			{Keys: []string{"d"}, Description: "compose down marked"},
+		},
+		{
+			{Keys: []string{"S"}, Description: "Save marked as preset"},
 		},
 	}
 
