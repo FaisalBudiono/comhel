@@ -1,4 +1,4 @@
-package cmdsaver
+package cmdconfig
 
 import (
 	"fmt"
@@ -16,11 +16,11 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 )
 
-func (m model) Init() tea.Cmd {
+func (m modelSaver) Init() tea.Cmd {
 	return fetchConfigs(m.ctx, m.configFetcherBroadcast)
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m modelSaver) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	l := log.Logger().With(logattr.Caller("cmdsaver: update"))
 
 	switch msg := msg.(type) {
@@ -56,7 +56,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m modelSaver) View() string {
 	var s string
 
 	s += styleutil.Title().Render("Preset Saver")
@@ -69,7 +69,7 @@ func (m model) View() string {
 	return s
 }
 
-func (m model) renderTable() string {
+func (m modelSaver) renderTable() string {
 	l := log.Logger().With(logattr.Caller("cmdsaver: renderTable"))
 
 	if m.configs == nil {
@@ -88,7 +88,7 @@ func (m model) renderTable() string {
 	return t.Render()
 }
 
-func (m model) renderTableRows() [][]string {
+func (m modelSaver) renderTableRows() [][]string {
 	mapConfigs := make(map[string]configPreset, len(m.configs))
 	for _, c := range m.configs {
 		mapConfigs[c.key] = c
@@ -105,7 +105,7 @@ func (m model) renderTableRows() [][]string {
 	return rows
 }
 
-func (m model) tableStyling(row, col int) lipgloss.Style {
+func (m modelSaver) tableStyling(row, col int) lipgloss.Style {
 	switch row {
 	case table.HeaderRow:
 		return styleutil.Header().Align(lipgloss.Center)
@@ -114,7 +114,7 @@ func (m model) tableStyling(row, col int) lipgloss.Style {
 	}
 }
 
-func (m model) formatServices(services []string) string {
+func (m modelSaver) formatServices(services []string) string {
 	if len(services) == 0 {
 		return styleutil.Disable().Render("<none>")
 	}
@@ -136,7 +136,7 @@ func (m model) formatServices(services []string) string {
 	)
 }
 
-func (m model) helperText() string {
+func (m modelSaver) helperText() string {
 	mapKey := func(keys []string) []domain.Keymap {
 		if len(keys) == 0 {
 			return nil
@@ -162,7 +162,7 @@ func (m model) helperText() string {
 	return styleutil.RenderHelper(helpGroups)
 }
 
-func (m model) cleanPresets(doms []domain.ConfigPreset) []configPreset {
+func (m modelSaver) cleanPresets(doms []domain.ConfigPreset) []configPreset {
 	l := log.Logger().With(logattr.Caller("cmdsaver: cleanPresets"))
 
 	res := make([]configPreset, 0)

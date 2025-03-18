@@ -1,4 +1,4 @@
-package cmdsaver
+package cmdconfig
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package cmdsaver
+package cmdconfig
 
 import "github.com/FaisalBudiono/comhel/internal/app/port/portout"
 

@@ -1,4 +1,4 @@
-package cmdsaver
+package cmdconfig
 
 import (
 	"context"
@@ -24,7 +24,7 @@ const (
 
 var validKeys = []string{key1, key2, key3, key4, key5, key6, key7, key8}
 
-type model struct {
+type modelSaver struct {
 	ctx context.Context
 
 	markedServices []string
@@ -35,13 +35,13 @@ type model struct {
 	configFetcherBroadcast chan []domain.ConfigPreset
 }
 
-func New(
+func NewSaver(
 	ctx context.Context,
 	quitBroadcast chan<- struct{},
 	markedServices []string,
 	validServices []string,
-) model {
-	return model{
+) modelSaver {
+	return modelSaver{
 		ctx: ctx,
 
 		markedServices: markedServices,

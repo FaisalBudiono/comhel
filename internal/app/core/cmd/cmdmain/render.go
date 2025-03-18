@@ -9,7 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss/table"
 
-	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdsaver"
+	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdconfig"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/log/logattr"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
@@ -52,7 +52,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "S":
-			m.subModel = cmdsaver.New(
+			m.subModel = cmdconfig.NewSaver(
 				m.ctx,
 				m.subModelQuitBroadcast,
 				m.markedServices(),
