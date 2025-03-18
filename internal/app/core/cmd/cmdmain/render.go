@@ -11,6 +11,7 @@ import (
 
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdsaver"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log/logattr"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
 	"github.com/FaisalBudiono/comhel/internal/app/domain"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -26,16 +27,18 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	l := log.Logger().With(logattr.Caller("cmdmain: update"))
+
 	switch msg.(type) {
 	case subModelQuitConfirmed:
-		log.Logger().Debug("update: sub model quit confirm")
+		l.Debug("update: sub model quit confirm")
 		m.subModel = nil
 
 		return m, m.spinner.Tick
 	}
 
 	if m.subModel != nil {
-		log.Logger().Debug("update: enter sub model update")
+		l.Debug("update: enter sub model update")
 
 		var cmd tea.Cmd
 		m.subModel, cmd = m.subModel.Update(msg)
@@ -45,7 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Logger().Debug("update: keypress", slog.String("key", msg.String()))
+		l.Debug("update: keypress", slog.String("key", msg.String()))
 
 		switch msg.String() {
 		case "S":
@@ -66,7 +69,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.keyQueues = append(m.keyQueues, "g")
 			keys := strings.Join(m.keyQueues, "")
 
-			log.Logger().Debug("update: g", slog.String("key", msg.String()))
+			l.Debug("update: g", slog.String("key", msg.String()))
 
 			if keys == "gg" {
 				m.cursor = indexStateAll
@@ -105,7 +108,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case " ":
 			m := m.toggleMark()
 
-			log.Logger().Debug(
+			l.Debug(
 				"update: change active state",
 				slog.String("active-states", fmt.Sprintf("%#v", m.activeStates)),
 			)
@@ -114,7 +117,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "u":
 			markedServices := m.markedServices()
 
-			log.Logger().Debug(
+			l.Debug(
 				"update: up marked services",
 				slog.String("services", fmt.Sprintf("%#v", markedServices)),
 			)
@@ -126,7 +129,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "d":
 			markedServices := m.markedServices()
 
-			log.Logger().Debug(
+			l.Debug(
 				"update: up marked services",
 				slog.String("services", fmt.Sprintf("%#v", markedServices)),
 			)
@@ -155,7 +158,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, cmd
 	case composeAllSent:
-		log.Logger().Debug("update: compose finish")
+		l.Debug("update: compose finish")
 
 		m.states = make(map[string]renderableService)
 
@@ -168,11 +171,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	case refetchedAllCalled:
-		log.Logger().Debug("update: refetched called")
+		l.Debug("update: refetched called")
 
 		return m, fetchList(m.ctx)
 	case refetchedMarkedCalled:
-		log.Logger().Debug("update: refetched marked only")
+		l.Debug("update: refetched marked only")
 
 		cmds := make([]tea.Cmd, len(msg))
 		for i, sn := range msg {
@@ -181,7 +184,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, tea.Batch(cmds...)
 	case fetchedListNames:
-		log.Logger().Debug("update: fetchlist name", slog.String("list", fmt.Sprintf("%#v", msg)))
+		l.Debug("update: fetchlist name", slog.String("list", fmt.Sprintf("%#v", msg)))
 
 		m.states = make(map[string]renderableService)
 		m.services = msg
@@ -193,13 +196,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, tea.Batch(cmds...)
 	case fetchedService:
-		log.Logger().Debug("update: fetchedService", slog.String("service", fmt.Sprintf("%#v", msg)))
+		l.Debug("update: fetchedService", slog.String("service", fmt.Sprintf("%#v", msg)))
 
 		m.states[msg.name] = renderableService(msg)
 
 		return m, nil
 	case fetchedServiceNotFound:
-		log.Logger().Debug("update: service not found", slog.String("service", string(msg)))
+		l.Debug("update: service not found", slog.String("service", string(msg)))
 
 		serviceName := string(msg)
 		m.states[serviceName] = offService(serviceName)
@@ -212,8 +215,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.subModel != nil {
-		log.Logger().Debug("view: enter sub model view")
-
 		return m.subModel.View()
 	}
 
@@ -261,8 +262,6 @@ func (m model) renderTable() string {
 	if m.services == nil {
 		return fmt.Sprintf("%s Loading", m.spinner.View())
 	}
-
-	log.Logger().Debug("render: table", slog.Int("cursor", m.cursor))
 
 	rows := make([][]string, len(m.services))
 	for i, name := range m.services {
@@ -340,12 +339,14 @@ func (m model) renderCursor(i int) string {
 }
 
 func (m model) toggleMark() model {
+	l := log.Logger().With(logattr.Caller("cmdmain: toggleMark"))
+
 	isTriggeredAll := m.cursor == indexStateAll
 	if !isTriggeredAll {
 		activeState := m.activeStates[m.cursor]
 		m.activeStates[m.cursor] = !activeState
 
-		log.Logger().Debug(
+		l.Debug(
 			"toggleMark: triggered one by one",
 			slog.String("activeStates", fmt.Sprintf("%#v", m.activeStates)),
 		)
@@ -359,7 +360,7 @@ func (m model) toggleMark() model {
 		m.activeStates[i] = !firstMarkState
 	}
 
-	log.Logger().Debug(
+	l.Debug(
 		"toggleMark: trigger all",
 		slog.Bool("firstMark", firstMarkState),
 		slog.String("services", fmt.Sprintf("%#v", m.services)),
@@ -391,6 +392,7 @@ func (m model) markedServices() []string {
 	}
 
 	log.Logger().Debug("fetching markedServices",
+		logattr.Caller("cmdmain: markedService"),
 		slog.Int("maxIndex", maxIndex),
 		slog.String("activeStates", fmt.Sprintf("%#v", m.activeStates)),
 		slog.String("markedServices", fmt.Sprintf("%#v", markedServices)),
