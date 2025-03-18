@@ -144,6 +144,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, fetchList(m.ctx)
 		}
 	case spinner.TickMsg:
+		// @todo only update when loading needed
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 
