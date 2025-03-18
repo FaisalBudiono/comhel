@@ -43,3 +43,7 @@ func Helper() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241"))
 }
+
+func Disable() lipgloss.Style {
+	return Helper()
+}

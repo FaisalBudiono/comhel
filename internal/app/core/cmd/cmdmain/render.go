@@ -49,9 +49,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "@":
-			m.subModel = cmdsaver.New(m.subModelQuitBroadcast)
+			m.subModel = cmdsaver.New(m.ctx, m.subModelQuitBroadcast, m.services)
 
-			return m, waitSubModelQuit(m.subModelQuitBroadcast)
+			return m, tea.Batch(
+				m.subModel.Init(),
+				waitSubModelQuit(m.subModelQuitBroadcast),
+			)
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "g":
