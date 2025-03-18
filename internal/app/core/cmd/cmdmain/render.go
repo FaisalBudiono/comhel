@@ -219,6 +219,9 @@ func (m model) View() string {
 
 	var s string
 
+	s += styleutil.Title().Render("docker [COM]pose [HEL]per")
+	s += "\n\n"
+
 	s += m.renderTable()
 	s += "\n\n"
 	s += m.helperText()
