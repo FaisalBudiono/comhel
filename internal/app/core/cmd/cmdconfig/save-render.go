@@ -17,7 +17,11 @@ import (
 )
 
 func (m modelSaver) Init() tea.Cmd {
-	return fetchConfigs(m.ctx, m.configFetcherBroadcast)
+	return fetchConfigs(
+		m.ctx,
+		m.configFetcherBroadcast,
+		m.configFetcherErrorBroadcast,
+	)
 }
 
 func (m modelSaver) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -41,11 +45,23 @@ func (m modelSaver) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case configSaved:
 		l.Debug("config saved received")
 
-		return m, fetchConfigs(m.ctx, m.configFetcherBroadcast)
+		return m, fetchConfigs(
+			m.ctx,
+			m.configFetcherBroadcast,
+			m.configFetcherErrorBroadcast,
+		)
 	case fetchConfigSent:
 		l.Debug("fetch config sent")
 
-		return m, receiveConfigs(m.configFetcherBroadcast)
+		return m, tea.Batch(
+			listenConfigsReceiver(m.configFetcherBroadcast),
+			listenError(m.configFetcherErrorBroadcast),
+		)
+	case errorReceived:
+		l.Debug("error received")
+		m.err = msg
+
+		return m, nil
 	case configsReceived:
 		l.Debug("config received")
 		m.configs = m.cleanPresets(msg)
@@ -62,11 +78,25 @@ func (m modelSaver) View() string {
 	s += styleutil.Title().Render("Preset Saver")
 	s += "\n\n"
 
+	s += m.renderError()
+
 	s += m.renderTable()
 	s += "\n\n"
 	s += m.helperText()
 
 	return s
+}
+
+func (m modelSaver) renderError() string {
+	if m.err == nil {
+		return ""
+	}
+
+	s := fmt.Sprintf("Failed to parse .comhelconfig.json:\nReason: %s",
+		m.err.Error(),
+	)
+
+	return styleutil.Error().Render(s) + "\n\n"
 }
 
 func (m modelSaver) renderTable() string {
@@ -164,6 +194,10 @@ func (m modelSaver) helperText() string {
 
 func (m modelSaver) cleanPresets(doms []domain.ConfigPreset) []configPreset {
 	l := log.Logger().With(logattr.Caller("cmdsaver: cleanPresets"))
+
+	if len(doms) == 0 {
+		return nil
+	}
 
 	res := make([]configPreset, 0)
 

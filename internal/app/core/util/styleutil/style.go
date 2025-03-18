@@ -4,11 +4,22 @@ import "github.com/charmbracelet/lipgloss"
 
 func Title() lipgloss.Style {
 	return lipgloss.NewStyle().
-        Background(ColorDarkPurple).
+		Background(ColorDarkPurple).
 		Border(lipgloss.DoubleBorder()).
 		Width(50).Height(3).
 		Align(lipgloss.Center).AlignVertical(lipgloss.Center).
-        Bold(true).Italic(true)
+		Bold(true).Italic(true)
+}
+
+func Error() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color("#ff0000")).
+		Foreground(lipgloss.Color("#ffffff")).
+		Border(lipgloss.RoundedBorder()).
+		Height(4).
+		Padding(0, 2).
+		Align(lipgloss.Center).AlignVertical(lipgloss.Center).
+		Bold(true).Italic(true)
 }
 
 func Cell() lipgloss.Style {

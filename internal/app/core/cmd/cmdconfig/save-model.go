@@ -31,8 +31,11 @@ type modelSaver struct {
 	validServices  []string
 	configs        []configPreset
 
-	quitBroadcast          chan<- struct{}
-	configFetcherBroadcast chan []domain.ConfigPreset
+	err error
+
+	quitBroadcast               chan<- struct{}
+	configFetcherBroadcast      chan []domain.ConfigPreset
+	configFetcherErrorBroadcast chan error
 }
 
 func NewSaver(
@@ -47,7 +50,8 @@ func NewSaver(
 		markedServices: markedServices,
 		validServices:  validServices,
 
-		quitBroadcast:          quitBroadcast,
-		configFetcherBroadcast: make(chan []domain.ConfigPreset),
+		quitBroadcast:               quitBroadcast,
+		configFetcherBroadcast:      make(chan []domain.ConfigPreset),
+		configFetcherErrorBroadcast: make(chan error),
 	}
 }

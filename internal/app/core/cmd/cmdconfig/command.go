@@ -20,15 +20,16 @@ func quit(b chan<- struct{}) tea.Cmd {
 
 type fetchConfigSent struct{}
 
-func fetchConfigs(ctx context.Context, b chan<- []domain.ConfigPreset) tea.Cmd {
+func fetchConfigs(
+	ctx context.Context,
+	cRes chan<- []domain.ConfigPreset,
+	cErr chan<- error,
+) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			res, err := configRepo.Fetch(ctx)
-			if err != nil {
-				panic(err)
-			}
-
-			b <- res
+			cRes <- res
+			cErr <- err
 		}()
 
 		return fetchConfigSent(struct{}{})
@@ -37,11 +38,21 @@ func fetchConfigs(ctx context.Context, b chan<- []domain.ConfigPreset) tea.Cmd {
 
 type configsReceived []domain.ConfigPreset
 
-func receiveConfigs(b <-chan []domain.ConfigPreset) tea.Cmd {
+func listenConfigsReceiver(b <-chan []domain.ConfigPreset) tea.Cmd {
 	return func() tea.Msg {
 		res := <-b
 
 		return configsReceived(res)
+	}
+}
+
+type errorReceived error
+
+func listenError(b <-chan error) tea.Cmd {
+	return func() tea.Msg {
+		err := <-b
+
+		return errorReceived(err)
 	}
 }
 
