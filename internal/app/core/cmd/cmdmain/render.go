@@ -31,7 +31,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		log.Logger().Debug("update: sub model quit confirm")
 		m.subModel = nil
 
-		return m, nil
+		return m, m.spinner.Tick
 	}
 
 	if m.subModel != nil {
@@ -40,10 +40,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.subModel, cmd = m.subModel.Update(msg)
 
-		var spinnerCMD tea.Cmd
-		m.spinner, spinnerCMD = m.spinner.Update(msg)
-
-		return m, tea.Batch(cmd, spinnerCMD)
+		return m, cmd
 	}
 
 	switch msg := msg.(type) {
