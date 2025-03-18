@@ -12,6 +12,7 @@ import (
 	"github.com/FaisalBudiono/comhel/internal/app/core/cmd/cmdsaver"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/styleutil"
+	"github.com/FaisalBudiono/comhel/internal/app/domain"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -220,16 +221,27 @@ func (m model) View() string {
 }
 
 func (m model) helperText() string {
-	var s string
-	render := styleutil.Helper().Render
+	helpGroups := [][]domain.Keymap{
+		{
+			{Keys: []string{"q", "ctrl+c"}, Description: "quit"},
+			{Keys: []string{"R"}, Description: "refresh status"},
+			{Keys: []string{"U"}, Description: "compose up ALL"},
+			{Keys: []string{"D"}, Description: "compose down ALL"},
+		},
+		{
+			{Keys: []string{"k", "↑"}, Description: "up"},
+			{Keys: []string{"j", "↓"}, Description: "down"},
+			{Keys: []string{"home", "gg"}, Description: "Go top"},
+			{Keys: []string{"end", "G"}, Description: "Go bottom"},
+		},
+		{
+			{Keys: []string{"<space>"}, Description: "mark service"},
+			{Keys: []string{"u"}, Description: "compose up marked"},
+			{Keys: []string{"d"}, Description: "compose down marked"},
+		},
+	}
 
-	s += render("k/↑: cursor up | j/↓: cursor down | home/gg: Go top | end/G: Go bottom")
-	s += "\n"
-	s += render("u: Up marked | d: Down marked | space: mark")
-	s += "\n"
-	s += render("q: quit | R: refresh | U: Up ALL | D: Down ALL")
-
-	return s
+	return styleutil.RenderHelper(helpGroups)
 }
 
 func (m model) renderTable() string {
