@@ -99,6 +99,45 @@ func (repo *jsonconfig) Save(ctx context.Context, p domain.ConfigPreset) (domain
 	return p, nil
 }
 
+func (repo *jsonconfig) Fetch(ctx context.Context) ([]domain.ConfigPreset, error) {
+	repo.m.Lock()
+	defer repo.m.Unlock()
+
+	l := log.Logger().With(logattr.Caller("jsonconfig: fetch"))
+
+	l.Debug("preparing to read file")
+	f, err := openFile()
+	if err != nil {
+		l.Error("error opening file", logattr.Error(err))
+
+		return nil, err
+	}
+	defer f.Close()
+
+	buf, err := io.ReadAll(f)
+	if err != nil {
+		l.Error("error reading buffer", logattr.Error(err))
+
+		return nil, err
+	}
+	l.Debug("buf created", slog.String("buf", string(buf)))
+
+	var fp filePreset
+	err = json.Unmarshal(buf, &fp)
+	if err != nil {
+		l.Error("error unmarshalling", logattr.Error(err))
+
+		return nil, err
+	}
+
+	res := make([]domain.ConfigPreset, len(fp.Presets))
+	for i, p := range fp.Presets {
+		res[i] = domain.NewConfigPreset(p.Key, p.Services)
+	}
+
+	return res, nil
+}
+
 func New() *jsonconfig {
 	return &jsonconfig{}
 }
