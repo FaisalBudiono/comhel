@@ -3,6 +3,7 @@ package jsonconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"slices"
@@ -49,11 +50,8 @@ func (repo *jsonconfig) Save(ctx context.Context, p domain.ConfigPreset) (domain
 	}
 	l.Debug("buf created", slog.String("buf", string(buf)))
 
-	var fp filePreset
-	err = json.Unmarshal(buf, &fp)
+	fp, err := unmarshalFilePreset(buf)
 	if err != nil {
-		l.Error("error unmarshalling", logattr.Error(err))
-
 		return domain.ConfigPreset{}, err
 	}
 
@@ -84,25 +82,6 @@ func (repo *jsonconfig) Save(ctx context.Context, p domain.ConfigPreset) (domain
 	return p, nil
 }
 
-func replacePreset(fp filePreset, p configPreset) []configPreset {
-	presets := make([]configPreset, len(fp.Presets))
-	copy(presets, fp.Presets)
-
-	idx := slices.IndexFunc(presets, func(item configPreset) bool {
-		return item.Key == p.Key
-	})
-
-	if idx != -1 {
-		presets[idx] = p
-
-		return presets
-	}
-
-	presets = append(presets, p)
-
-	return presets
-}
-
 func (repo *jsonconfig) Fetch(ctx context.Context) ([]domain.ConfigPreset, error) {
 	repo.m.Lock()
 	defer repo.m.Unlock()
@@ -126,11 +105,8 @@ func (repo *jsonconfig) Fetch(ctx context.Context) ([]domain.ConfigPreset, error
 	}
 	l.Debug("buf created", slog.String("buf", string(buf)))
 
-	var fp filePreset
-	err = json.Unmarshal(buf, &fp)
+	fp, err := unmarshalFilePreset(buf)
 	if err != nil {
-		l.Error("error unmarshalling", logattr.Error(err))
-
 		return nil, err
 	}
 
@@ -140,6 +116,44 @@ func (repo *jsonconfig) Fetch(ctx context.Context) ([]domain.ConfigPreset, error
 	}
 
 	return res, nil
+}
+
+func replacePreset(fp filePreset, p configPreset) []configPreset {
+	presets := make([]configPreset, len(fp.Presets))
+	copy(presets, fp.Presets)
+
+	idx := slices.IndexFunc(presets, func(item configPreset) bool {
+		return item.Key == p.Key
+	})
+
+	if idx != -1 {
+		presets[idx] = p
+
+		return presets
+	}
+
+	presets = append(presets, p)
+
+	return presets
+}
+
+func unmarshalFilePreset(buf []byte) (filePreset, error) {
+	var fp filePreset
+	err := json.Unmarshal(buf, &fp)
+	if err != nil {
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			if syntaxErr.Offset == 0 {
+				return filePreset{}, nil
+			}
+		}
+
+		log.Logger().Error("error unmarshalling", logattr.Error(err))
+
+		return filePreset{}, err
+	}
+
+	return fp, nil
 }
 
 func New() *jsonconfig {

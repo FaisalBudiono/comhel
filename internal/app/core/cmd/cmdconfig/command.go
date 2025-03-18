@@ -42,6 +42,11 @@ func listenConfigsReceiver(b <-chan []domain.ConfigPreset) tea.Cmd {
 	return func() tea.Msg {
 		res := <-b
 
+		log.Logger().Debug("configs received",
+			logattr.Caller("cmdconfig: command: listen configs"),
+			logattr.Any("res", res),
+		)
+
 		return configsReceived(res)
 	}
 }
@@ -52,6 +57,16 @@ func listenError(b <-chan error) tea.Cmd {
 	return func() tea.Msg {
 		err := <-b
 
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		}
+		log.Logger().Debug("error received",
+			logattr.Caller("cmdconfig: command: listen Error"),
+			slog.String("err", errMsg),
+			logattr.Any("errComplete", err),
+		)
+
 		return errorReceived(err)
 	}
 }
@@ -60,7 +75,7 @@ type configSaved struct{}
 
 func saveConfig(ctx context.Context, key string, services []string) tea.Cmd {
 	return func() tea.Msg {
-		l := log.Logger().With(logattr.Caller("cmdsaver: command: saveConfig"))
+		l := log.Logger().With(logattr.Caller("cmdconfig: command: saveConfig"))
 
 		l.DebugContext(ctx, "key press",
 			slog.String("key", key),

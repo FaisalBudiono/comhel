@@ -102,11 +102,11 @@ func (m modelSaver) renderError() string {
 func (m modelSaver) renderTable() string {
 	l := log.Logger().With(logattr.Caller("cmdsaver: renderTable"))
 
+	l.Debug("render: table", logattr.Any("configs", m.configs))
+
 	if m.configs == nil {
 		return "Loading"
 	}
-
-	l.Debug("render: table")
 
 	t := table.New().
 		StyleFunc(m.tableStyling).
@@ -195,8 +195,12 @@ func (m modelSaver) helperText() string {
 func (m modelSaver) cleanPresets(doms []domain.ConfigPreset) []configPreset {
 	l := log.Logger().With(logattr.Caller("cmdsaver: cleanPresets"))
 
-	if len(doms) == 0 {
+	if doms == nil {
 		return nil
+	}
+
+	if len(doms) == 0 {
+		return []configPreset{}
 	}
 
 	res := make([]configPreset, 0)
