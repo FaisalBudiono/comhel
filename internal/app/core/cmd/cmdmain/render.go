@@ -271,6 +271,7 @@ func (m model) helperText() string {
 		},
 		{
 			{Keys: []string{"S"}, Description: "Save marked as preset"},
+			{Keys: []string{"L"}, Description: "Load marked from preset"},
 		},
 	}
 
