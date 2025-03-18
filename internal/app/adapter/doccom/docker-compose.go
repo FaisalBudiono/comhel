@@ -3,6 +3,8 @@ package doccom
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"os/exec"
 	"slices"
 	"strings"
@@ -12,6 +14,30 @@ import (
 	"github.com/FaisalBudiono/comhel/internal/app/domain"
 	"github.com/FaisalBudiono/comhel/internal/app/port/portout"
 )
+
+type cmd struct {
+	*exec.Cmd
+}
+
+func (c *cmd) output() ([]byte, error) {
+	buf, err := c.Output()
+	if err != nil {
+		var exitCodeErr *exec.ExitError
+		if errors.As(err, &exitCodeErr) {
+			if exitCodeErr.ProcessState.ExitCode() == 1 {
+				return []byte{}, nil
+			}
+		}
+
+		return nil, err
+	}
+
+	return buf, nil
+}
+
+func wrapCMD(c *exec.Cmd) *cmd {
+	return &cmd{c}
+}
 
 type service struct {
 	Name  string `json:"Service"`
@@ -23,12 +49,12 @@ type dockerCompose struct{}
 func (repo *dockerCompose) List(ctx context.Context) ([]string, error) {
 	l := log.Logger().With(logattr.Caller("doccom: list"))
 
-	cmd := exec.CommandContext(
+	cmd := wrapCMD(exec.CommandContext(
 		ctx,
 		"docker", "compose", "config", "--services",
-	)
+	))
 
-	o, err := cmd.Output()
+	o, err := cmd.output()
 	if err != nil {
 		l.Error("error when running command", logattr.Any("error", err))
 
@@ -51,12 +77,12 @@ func (repo *dockerCompose) List(ctx context.Context) ([]string, error) {
 func (repo *dockerCompose) Service(ctx context.Context, serviceName string) (domain.Service, error) {
 	l := log.Logger().With(logattr.Caller("doccom: fetch service info"))
 
-	cmd := exec.CommandContext(
+	cmd := wrapCMD(exec.CommandContext(
 		ctx,
 		"docker", "compose", "ps", "-a", "--format", "json", serviceName,
-	)
+	))
 
-	o, err := cmd.Output()
+	o, err := cmd.output()
 	if err != nil {
 		l.Error("error when running command", logattr.Any("error", err))
 
@@ -89,12 +115,12 @@ func (repo *dockerCompose) Service(ctx context.Context, serviceName string) (dom
 func (repo *dockerCompose) Up(ctx context.Context) error {
 	l := log.Logger().With(logattr.Caller("doccom: up"))
 
-	cmd := exec.CommandContext(
+	cmd := wrapCMD(exec.CommandContext(
 		ctx,
 		"docker", "compose", "up", "-d",
-	)
+	))
 
-	_, err := cmd.Output()
+	_, err := cmd.output()
 	if err != nil {
 		l.Error("error when running command", logattr.Any("error", err))
 
@@ -116,11 +142,18 @@ func (repo *dockerCompose) UpByService(ctx context.Context, services ...string) 
 		args = append(args, s)
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := wrapCMD(exec.CommandContext(ctx, "docker", args...))
 
-	_, err := cmd.Output()
+	_, err := cmd.output()
 	if err != nil {
-		l.Error("error when running command", logattr.Any("error", err))
+		var exitCodeErr *exec.ExitError
+		if errors.As(err, &exitCodeErr) {
+			exitCodeErr.ProcessState.ExitCode()
+		}
+		l.Error("error when running command",
+			logattr.Any("error", err),
+			slog.String("errorMessage", err.Error()),
+		)
 
 		return err
 	}
@@ -131,12 +164,12 @@ func (repo *dockerCompose) UpByService(ctx context.Context, services ...string) 
 func (repo *dockerCompose) Down(ctx context.Context) error {
 	l := log.Logger().With(logattr.Caller("doccom: down"))
 
-	cmd := exec.CommandContext(
+	cmd := wrapCMD(exec.CommandContext(
 		ctx,
 		"docker", "compose", "down", "--remove-orphans",
-	)
+	))
 
-	_, err := cmd.Output()
+	_, err := cmd.output()
 	if err != nil {
 		l.Error("error when running command", logattr.Any("error", err))
 
@@ -158,9 +191,9 @@ func (repo *dockerCompose) DownByService(ctx context.Context, services ...string
 		args = append(args, s)
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := wrapCMD(exec.CommandContext(ctx, "docker", args...))
 
-	_, err := cmd.Output()
+	_, err := cmd.output()
 	if err != nil {
 		l.Error("error when running command", logattr.Any("error", err))
 
