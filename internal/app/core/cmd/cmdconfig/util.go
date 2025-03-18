@@ -31,7 +31,7 @@ func renderTable(presets []configPreset) string {
 		}).
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(lipgloss.NewStyle().Foreground(styleutil.ColorDarkPurple)).
-		Headers("KEY", "NO", "SERVICES").
+		Headers("NO", "KEY", "SERVICES").
 		Rows(renderTableRows(presets)...)
 
 	return t.Render()
@@ -48,7 +48,7 @@ func renderTableRows(presets []configPreset) [][]string {
 		no := strconv.FormatInt(int64(i+1), 10)
 		services := mapConfigs[key].services
 
-		rows[i] = []string{key, no, formatServices(services)}
+		rows[i] = []string{no, key, formatServices(services)}
 	}
 
 	return rows
