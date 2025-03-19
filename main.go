@@ -27,7 +27,7 @@ func main() {
 	cmdconfig.BindDeps(jsonconfig.New())
 	cmdmain.BindDeps(doccom.New())
 
-	p := tea.NewProgram(cmdmain.New())
+	p := tea.NewProgram(cmdmain.New(), tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
 		panic(err)
