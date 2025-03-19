@@ -254,22 +254,18 @@ func (m model) helperText() string {
 	helpGroups := [][]domain.Keymap{
 		{
 			{Keys: []string{"q", "ctrl+c"}, Description: "quit"},
-			{Keys: []string{"R"}, Description: "refresh status"},
+			{Keys: []string{"<space>"}, Description: "mark service"},
 			{Keys: []string{"U"}, Description: "compose up ALL"},
 			{Keys: []string{"D"}, Description: "compose down ALL"},
-		},
-		{
-			{Keys: []string{"k", "↑"}, Description: "up"},
-			{Keys: []string{"j", "↓"}, Description: "down"},
-			{Keys: []string{"home", "gg"}, Description: "Go top"},
-			{Keys: []string{"end", "G"}, Description: "Go bottom"},
-		},
-		{
-			{Keys: []string{"<space>"}, Description: "mark service"},
+			{Keys: []string{"R"}, Description: "refresh status"},
 			{Keys: []string{"u"}, Description: "compose up marked"},
 			{Keys: []string{"d"}, Description: "compose down marked"},
 		},
 		{
+			{Keys: []string{"home", "gg"}, Description: "Go top"},
+			{Keys: []string{"k", "↑"}, Description: "up"},
+			{Keys: []string{"j", "↓"}, Description: "down"},
+			{Keys: []string{"end", "G"}, Description: "Go bottom"},
 			{Keys: []string{"S"}, Description: "Save marked as preset"},
 			{Keys: []string{"L"}, Description: "Load marked from preset"},
 		},
