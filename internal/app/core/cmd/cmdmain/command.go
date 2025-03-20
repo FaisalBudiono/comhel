@@ -8,16 +8,25 @@ import (
 	"time"
 
 	"github.com/FaisalBudiono/comhel/internal/app/core/util/log"
+	"github.com/FaisalBudiono/comhel/internal/app/core/util/log/logattr"
 	"github.com/FaisalBudiono/comhel/internal/app/port/portout"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type fetchedListNames []string
+type (
+	fetchedListNames []string
+	errorReceived    error
+)
 
 func fetchList(ctx context.Context) tea.Cmd {
 	return func() tea.Msg {
 		names, err := composeRepo.List(ctx)
 		if err != nil {
+			switch cusErr := err.(type) {
+			case *portout.ConfigErr:
+				return errorReceived(cusErr)
+			}
+
 			panic(err)
 		}
 
@@ -27,32 +36,28 @@ func fetchList(ctx context.Context) tea.Cmd {
 
 type composeAllSent bool
 
-func composeDown(ctx context.Context, b chan<- struct{}) tea.Cmd {
+func composeDown(
+	ctx context.Context, b chan<- struct{}, bErr chan<- error,
+) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			err := composeRepo.Down(ctx)
-			if err != nil {
-				log.Logger().Error("failed compose down", slog.String("err", fmt.Sprintf("%#v", err)))
-				panic(err)
-			}
-
 			b <- struct{}{}
+			bErr <- err
 		}()
 
 		return composeAllSent(false)
 	}
 }
 
-func composeUp(ctx context.Context, b chan<- struct{}) tea.Cmd {
+func composeUp(
+	ctx context.Context, b chan<- struct{}, bErr chan<- error,
+) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			err := composeRepo.Up(ctx)
-			if err != nil {
-				log.Logger().Error("failed compose up", slog.String("err", fmt.Sprintf("%#v", err)))
-				panic(err)
-			}
-
 			b <- struct{}{}
+			bErr <- err
 		}()
 
 		return composeAllSent(false)
@@ -62,19 +67,14 @@ func composeUp(ctx context.Context, b chan<- struct{}) tea.Cmd {
 type composeMarkedSent []string
 
 func composeUpMarked(
-	ctx context.Context, services []string, b chan<- []string,
+	ctx context.Context, services []string, b chan<- []string, bErr chan<- error,
 ) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			err := composeRepo.UpByService(ctx, services...)
-			if err != nil {
-				if !errors.Is(err, portout.ErrNoService) {
-					log.Logger().Error("failed compose up manually", slog.String("err", fmt.Sprintf("%#v", err)))
-					panic(err)
-				}
-			}
 
 			b <- services
+			bErr <- err
 		}()
 
 		return composeMarkedSent(services)
@@ -82,19 +82,14 @@ func composeUpMarked(
 }
 
 func composeDownMarked(
-	ctx context.Context, services []string, b chan<- []string,
+	ctx context.Context, services []string, b chan<- []string, bErr chan<- error,
 ) tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			err := composeRepo.DownByService(ctx, services...)
-			if err != nil {
-				if !errors.Is(err, portout.ErrNoService) {
-					log.Logger().Error("failed compose down manually", slog.String("err", fmt.Sprintf("%#v", err)))
-					panic(err)
-				}
-			}
 
 			b <- services
+			bErr <- err
 		}()
 
 		return composeMarkedSent(services)
@@ -123,6 +118,28 @@ func refetchMarked(b <-chan []string) tea.Cmd {
 		log.Logger().Debug("cmd: END refetch marked")
 
 		return refetchedMarkedCalled(res)
+	}
+}
+
+func listenError(b <-chan error) tea.Cmd {
+	return func() tea.Msg {
+		err := <-b
+
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		}
+		log.Logger().Debug("error received",
+			logattr.Caller("cmdmain: command: listen Error"),
+			slog.String("err", errMsg),
+			logattr.Any("errComplete", err),
+		)
+
+		if errors.Is(err, portout.ErrNoService) {
+			return nil
+		}
+
+		return errorReceived(err)
 	}
 }
 

@@ -19,6 +19,7 @@ type model struct {
 	states       map[string]renderableService
 	cursor       int
 	activeStates map[int]bool
+	err          error
 
 	keyQueues        []string
 	cancelQueueReset context.CancelFunc
@@ -26,6 +27,7 @@ type model struct {
 	reloadBroadcast       chan struct{}
 	serviceBroadcast      chan []string
 	subModelQuitBroadcast chan struct{}
+	errorBroadcast        chan error
 }
 
 func New() model {
@@ -46,5 +48,6 @@ func New() model {
 		reloadBroadcast:       make(chan struct{}),
 		serviceBroadcast:      make(chan []string),
 		subModelQuitBroadcast: make(chan struct{}),
+		errorBroadcast:        make(chan error),
 	}
 }

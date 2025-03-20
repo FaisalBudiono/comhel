@@ -143,7 +143,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 
 			return m, tea.Batch(
-				composeUpMarked(m.ctx, markedServices, m.serviceBroadcast),
+				composeUpMarked(
+					m.ctx, markedServices, m.serviceBroadcast, m.errorBroadcast,
+				),
 				refetchMarked(m.serviceBroadcast),
 			)
 		case "d":
@@ -155,17 +157,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 
 			return m, tea.Batch(
-				composeDownMarked(m.ctx, markedServices, m.serviceBroadcast),
+				composeDownMarked(
+					m.ctx, markedServices, m.serviceBroadcast, m.errorBroadcast,
+				),
 				refetchMarked(m.serviceBroadcast),
 			)
 		case "U":
 			return m, tea.Batch(
-				composeUp(m.ctx, m.reloadBroadcast),
+				composeUp(m.ctx, m.reloadBroadcast, m.errorBroadcast),
 				refetchAll(m.reloadBroadcast),
 			)
 		case "D":
 			return m, tea.Batch(
-				composeDown(m.ctx, m.reloadBroadcast),
+				composeDown(m.ctx, m.reloadBroadcast, m.errorBroadcast),
 				refetchAll(m.reloadBroadcast),
 			)
 		case "R":
@@ -228,6 +232,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.states[serviceName] = offService(serviceName)
 
 		return m, nil
+	case errorReceived:
+		m.err = msg
+
+		return m, nil
 	}
 
 	return m, nil
@@ -243,7 +251,12 @@ func (m model) View() string {
 	s += styleutil.Title().Render("docker [COM]pose [HEL]per")
 	s += "\n\n"
 
-	s += m.renderTable()
+	if m.err == nil {
+		s += m.renderTable()
+	} else {
+		s += styleutil.Error().Render(m.err.Error())
+	}
+
 	s += "\n\n"
 	s += m.helperText()
 

@@ -22,10 +22,15 @@ type cmd struct {
 func (c *cmd) output() ([]byte, error) {
 	buf, err := c.Output()
 	if err != nil {
-		var exitCodeErr *exec.ExitError
-		if errors.As(err, &exitCodeErr) {
-			if exitCodeErr.ProcessState.ExitCode() == 1 {
+		switch cusErr := err.(type) {
+		case *exec.ExitError:
+			if cusErr.ProcessState.ExitCode() == 1 {
 				return []byte{}, nil
+			}
+		case *exec.Error:
+			return nil, &portout.ConfigErr{
+				CmdName: cusErr.Name,
+				Msg:     cusErr.Err.Error(),
 			}
 		}
 
