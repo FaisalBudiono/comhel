@@ -20,8 +20,15 @@ type cmd struct {
 }
 
 func (c *cmd) output() ([]byte, error) {
+	l := log.Logger().With(logattr.Caller("doccom: cmd: output"))
+
 	buf, err := c.Output()
 	if err != nil {
+		l.Error("error when getting output",
+			logattr.Any("error-full", err),
+			logattr.Error(err),
+		)
+
 		switch cusErr := err.(type) {
 		case *exec.ExitError:
 			if cusErr.ProcessState.ExitCode() == 1 {
